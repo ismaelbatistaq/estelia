@@ -8,20 +8,28 @@ import { useBusinessData } from '../hooks/useBusinessData';
 
 interface Customer {
   id: string;
-  first_name: string;
-  last_name: string;
+  name: string;
   email: string;
   phone: string;
-  preferences: any;
+  lastVisit: string;
+  totalVisits: number;
+  totalSpent: number;
+  status: string;
+  image_url: string;
 }
 
 export const Customers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const { data: customers, loading, error } = useBusinessData<Customer>('clients');
+  const { data, loading, error } = useBusinessData<Customer[]>('clients');
+
+  // Transform data to ensure it is a flat array
+  const customers: Customer[] = Array.isArray(data) ? data.flat() : [];
 
   if (loading) {
     return (
@@ -85,7 +93,7 @@ export const Customers = () => {
 
           {/* Customer List */}
           <CustomerList
-            customers={customers}
+            customers={customers} // Pasamos el array correctamente transformado
             searchQuery={searchQuery}
             onSelectCustomer={setSelectedCustomer}
           />

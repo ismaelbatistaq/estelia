@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../../lib/supabase'; // Asegúrate de que la ruta sea correcta
 import { X, Upload } from 'lucide-react';
 
 interface AddItemModalProps {
@@ -20,6 +21,47 @@ export const AddItemModal = ({ isOpen, onClose, type }: AddItemModalProps) => {
     email: '',
     phone: '',
   });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const tableName =
+        type === 'products'
+          ? 'products'
+          : type === 'services'
+          ? 'services'
+          : 'suppliers';
+
+      const payload = {
+        name: formData.name,
+        category: formData.category,
+        price: parseFloat(formData.price) || 0,
+        description: formData.description,
+        ...(type === 'products' && { sku: formData.sku, stock: parseInt(formData.stock) || 0 }),
+        ...(type === 'services' && { duration: parseInt(formData.duration) || 0 }),
+        ...(type === 'suppliers' && {
+          contact: formData.contact,
+          email: formData.email,
+          phone: formData.phone,
+        }),
+      };
+
+      const { error } = await supabase.from(tableName).insert(payload);
+
+      if (error) {
+        console.error('Error inserting data:', error.message);
+        alert('Error al guardar el elemento');
+        return;
+      }
+
+      alert('Elemento agregado con éxito');
+      onClose(); // Cierra el modal después de guardar
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      alert('Error inesperado al guardar el elemento');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -49,7 +91,7 @@ export const AddItemModal = ({ isOpen, onClose, type }: AddItemModalProps) => {
           </button>
         </div>
 
-        <form className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Common Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -116,44 +158,6 @@ export const AddItemModal = ({ isOpen, onClose, type }: AddItemModalProps) => {
                   />
                 </div>
               )}
-            </div>
-          )}
-
-          {type === 'suppliers' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contacto
-                </label>
-                <input
-                  type="text"
-                  value={formData.contact}
-                  onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
             </div>
           )}
 

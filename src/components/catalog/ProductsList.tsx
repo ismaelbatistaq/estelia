@@ -1,36 +1,44 @@
 import React from 'react';
 import { Edit, Trash2, AlertCircle } from 'lucide-react';
+import { useBusinessData } from '../../hooks/useBusinessData';
+
+
+interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  category_id: string | null;
+  price: number;
+  stock: number;
+  min_stock: number;
+  status: string | null;
+  image_url: string | null;
+}
 
 interface ProductsListProps {
   searchQuery: string;
 }
 
 export const ProductsList = ({ searchQuery }: ProductsListProps) => {
-  const products = [
-    {
-      id: 1,
-      name: 'Shampoo Premium',
-      sku: 'SH001',
-      category: 'Cuidado del Cabello',
-      price: 450,
-      stock: 25,
-      status: 'active',
-      image: 'https://images.unsplash.com/photo-1556227702-d1e4e7b5c232?w=300',
-    },
-    {
-      id: 2,
-      name: 'Acondicionador Premium',
-      sku: 'AC001',
-      category: 'Cuidado del Cabello',
-      price: 400,
-      stock: 5,
-      status: 'low_stock',
-      image: 'https://images.unsplash.com/photo-1556227702-d1e4e7b5c232?w=300',
-    },
-    // Add more products as needed
-  ];
+  const { data: products, loading, error } = useBusinessData<Product>('products');
 
-  const filteredProducts = products.filter((product) =>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600">Error loading products. Please try again later.</p>
+      </div>
+    );
+  }
+
+  const filteredProducts = (products || []).filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -40,11 +48,11 @@ export const ProductsList = ({ searchQuery }: ProductsListProps) => {
         <div key={product.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
           <div className="aspect-square relative">
             <img
-              src={product.image}
+              src={product.image_url || 'https://via.placeholder.com/300'}
               alt={product.name}
               className="w-full h-full object-cover"
             />
-            {product.status === 'low_stock' && (
+            {product.stock <= product.min_stock && (
               <div className="absolute top-2 right-2 bg-red-100 text-red-600 px-2 py-1 rounded-lg text-sm font-medium flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 Bajo Stock

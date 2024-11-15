@@ -1,41 +1,34 @@
 import React from 'react';
 import { User, Calendar, Package, Star } from 'lucide-react';
 
-interface CustomerListProps {
-  searchQuery: string;
-  onSelectCustomer: (customer: any) => void;
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  lastVisit: string;
+  totalVisits: number;
+  totalSpent: number;
+  status: string;
+  image_url: string;
 }
 
-export const CustomerList = ({ searchQuery, onSelectCustomer }: CustomerListProps) => {
-  const customers = [
-    {
-      id: 1,
-      name: 'María Pérez',
-      email: 'maria@email.com',
-      phone: '809-555-0101',
-      lastVisit: '2024-01-20',
-      totalVisits: 12,
-      totalSpent: 15000,
-      status: 'active',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-    },
-    {
-      id: 2,
-      name: 'Laura Díaz',
-      email: 'laura@email.com',
-      phone: '809-555-0102',
-      lastVisit: '2024-01-15',
-      totalVisits: 8,
-      totalSpent: 12000,
-      status: 'active',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
-    },
-  ];
+interface CustomerListProps {
+  customers: Customer[]; // Aseguramos que siempre sea un array
+  searchQuery: string;
+  onSelectCustomer: (customer: Customer) => void;
+}
 
-  const filteredCustomers = customers.filter((customer) =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.phone.includes(searchQuery)
+export const CustomerList = ({
+  searchQuery,
+  customers,
+  onSelectCustomer,
+}: CustomerListProps) => {
+  const filteredCustomers = customers.filter(
+    (customer) =>
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.phone.includes(searchQuery)
   );
 
   return (
@@ -48,7 +41,7 @@ export const CustomerList = ({ searchQuery, onSelectCustomer }: CustomerListProp
         >
           <div className="flex items-center gap-4 mb-4">
             <img
-              src={customer.image}
+              src={customer.image_url}
               alt={customer.name}
               className="w-16 h-16 rounded-full object-cover"
             />
@@ -82,11 +75,11 @@ export const CustomerList = ({ searchQuery, onSelectCustomer }: CustomerListProp
               </span>
             </div>
             <span
-              className={`px-2 py-1 text-xs font-medium rounded-full
-                ${customer.status === 'active'
+              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                customer.status === 'active'
                   ? 'bg-green-50 text-green-600'
                   : 'bg-gray-50 text-gray-600'
-                }`}
+              }`}
             >
               {customer.status === 'active' ? 'Activo' : 'Inactivo'}
             </span>
