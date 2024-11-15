@@ -26,6 +26,10 @@ export const OrganizationsList = () => {
     );
   }
 
+  const handleAccessApp = (slug: string) => {
+    navigate(`/app/${slug}/dashboard`); // Navega directamente al negocio
+  };
+
   const handleAddUser = (business: any) => {
     setSelectedBusiness(business);
     setShowAddUserModal(true);
@@ -87,7 +91,7 @@ export const OrganizationsList = () => {
                 <span>Add User</span>
               </button>
               <button
-                onClick={() => window.location.href = `/app/${org.slug}/login`}
+                onClick={() => handleAccessApp(org.slug)}
                 className="px-3 py-1 text-purple-600 hover:bg-purple-50 rounded transition-colors"
               >
                 Access App
@@ -97,7 +101,6 @@ export const OrganizationsList = () => {
         ))}
       </div>
 
-      {/* Add User Modal */}
       {showAddUserModal && (
         <AddUserModal
           isOpen={showAddUserModal}

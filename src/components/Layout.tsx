@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Menu, Calendar, ShoppingCart, Package, Settings, LayoutDashboard, Store, Users } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { TopBar } from './TopBar';
+import { useAuth } from '../contexts/AuthContext';
 import { useOrganization } from '../hooks/useOrganization';
 
 const menuItems = [
@@ -17,9 +18,9 @@ const menuItems = [
 
 export const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { user } = useAuth();
   const { organization } = useOrganization();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const isActiveRoute = (path: string) => {
     if (!organization?.slug) return false; // Evitar errores si `slug` no está definido
@@ -27,8 +28,8 @@ export const Layout = () => {
     return currentPath === path || currentPath.startsWith(`${path}/`);
   };
 
-  if (!organization || !organization.slug) {
-    // Manejo seguro si `organization` o `slug` no están disponibles
+  if (!organization && user.role !== 'SUPERADMIN') {
+    // Mostrar un mensaje de error si `organization` no está disponible y el usuario no es admin
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-gray-500">Organization data is not available. Please try again later.</p>
@@ -38,7 +39,12 @@ export const Layout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar sidebarOpen={sidebarOpen} onMenuClick={() => setSidebarOpen(!sidebarOpen)} organization={organization} />
+      {/* Top Bar */}
+      <TopBar
+        sidebarOpen={sidebarOpen}
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+        organization={organization}
+      />
 
       <div className="flex min-h-[calc(100vh-4rem)] pt-16">
         {/* Sidebar */}
@@ -52,7 +58,7 @@ export const Layout = () => {
               <NavItem
                 key={item.path}
                 {...item}
-                path={`/app/${organization.slug}/${item.path}`}
+                path={organization ? `/app/${organization.slug}/${item.path}` : '#'}
                 expanded={false}
                 showTooltip={true}
                 isActive={isActiveRoute(item.path)}
