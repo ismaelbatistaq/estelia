@@ -25,28 +25,30 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({
   }
 
   if (!user) {
-    if (requirePlatformAdmin) {
-      return <Navigate to="/platform/login" />;
-    }
-    if (requireBusinessAccess && businessSlug) {
-      return <Navigate to={`/app/${businessSlug}/login`} />;
-    }
-    return <Navigate to="/platform/login" />;
+    // Redirigir al login correspondiente
+    const redirectTo = requirePlatformAdmin
+      ? "/platform/login"
+      : requireBusinessAccess && businessSlug
+      ? `/app/${businessSlug}/login`
+      : "/platform/login";
+
+    return <Navigate to={redirectTo} replace />;
   }
 
-  // Check platform admin access
+  // Verificar acceso de plataforma
   if (requirePlatformAdmin && user.role !== 'SUPERADMIN') {
-    if (user.organization?.slug) {
-      return <Navigate to={`/app/${user.organization.slug}`} />;
-    }
-    return <Navigate to="/platform/login" />;
+    const redirectTo = user.organization?.slug
+      ? `/app/${user.organization.slug}`
+      : "/platform/login";
+
+    return <Navigate to={redirectTo} replace />;
   }
 
-  // Check business access
+  // Verificar acceso al negocio
   if (requireBusinessAccess && businessSlug) {
     const hasAccess = user.organization?.slug === businessSlug;
     if (!hasAccess) {
-      return <Navigate to={`/app/${businessSlug}/login`} />;
+      return <Navigate to={`/app/${businessSlug}/login`} replace />;
     }
   }
 

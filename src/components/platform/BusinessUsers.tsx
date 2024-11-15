@@ -1,39 +1,70 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
-import { useSupabase } from '../../hooks/useSupabase';
+import { supabase } from '../../lib/supabase';
 import { AddUserModal } from './AddUserModal';
 
+interface User {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  status?: string;
+}
+
+interface Business {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 interface BusinessUsersProps {
-  business: any;
+  business: Business;
 }
 
 export const BusinessUsers = ({ business }: BusinessUsersProps) => {
+  const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const { data: users, isLoading } = useSupabase(
-    'profiles',
-    {
-      select: '*',
-      filters: { business_id: business?.id }
-    },
-    [business?.id]
+  // Fetch users associated with the selected business
+  useEffect(() => {
+    const fetchBusinessUsers = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('business_id', business.id);
+
+      if (error) {
+        console.error('Error fetching business users:', error);
+        setUsers([]);
+      } else {
+        setUsers(data || []);
+      }
+      setLoading(false);
+    };
+
+    if (business?.id) {
+      fetchBusinessUsers();
+    }
+  }, [business]);
+
+  const filteredUsers = users.filter((user) =>
+    `${user.first_name} ${user.last_name} ${user.email}`
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
   );
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
-
-  const filteredUsers = users?.filter(user =>
-    `${user.first_name} ${user.last_name} ${user.email}`
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="space-y-6">
@@ -80,7 +111,7 @@ export const BusinessUsers = ({ business }: BusinessUsersProps) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredUsers?.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -94,10 +125,11 @@ export const BusinessUsers = ({ business }: BusinessUsersProps) => {
                     <span className="capitalize">{user.role}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full
-                      ${user.status === 'active'
-                        ? 'bg-green-50 text-green-600'
-                        : 'bg-gray-50 text-gray-600'
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        user.status === 'active'
+                          ? 'bg-green-50 text-green-600'
+                          : 'bg-gray-50 text-gray-600'
                       }`}
                     >
                       {user.status || 'active'}

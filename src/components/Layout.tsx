@@ -22,14 +22,24 @@ export const Layout = () => {
   const navigate = useNavigate();
 
   const isActiveRoute = (path: string) => {
+    if (!organization?.slug) return false; // Evitar errores si `slug` no está definido
     const currentPath = location.pathname.replace(`/app/${organization.slug}/`, '');
     return currentPath === path || currentPath.startsWith(`${path}/`);
   };
 
+  if (!organization || !organization.slug) {
+    // Manejo seguro si `organization` o `slug` no están disponibles
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">Organization data is not available. Please try again later.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <TopBar sidebarOpen={sidebarOpen} onMenuClick={() => setSidebarOpen(!sidebarOpen)} organization={organization} />
-      
+
       <div className="flex min-h-[calc(100vh-4rem)] pt-16">
         {/* Sidebar */}
         <aside

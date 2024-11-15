@@ -10,6 +10,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   loading: boolean;
 }
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -32,23 +33,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         `)
         .eq('id', userId)
         .single();
-  
+
       if (profileError) {
         console.error('Error fetching profile:', profileError.message);
         setUser(null);
         return;
       }
-  
+
       if (!profile) {
         console.warn("No profile found for user. Please create a profile.");
         setUser(null);
         return;
       }
-  
+
       setUser({
         ...profile,
         organization: profile.business,
-        role: profile.user_type === 'platform_admin' ? 'SUPERADMIN' : profile.role
+        role: profile.user_type === 'platform_admin' ? 'SUPERADMIN' : profile.role,
       });
     } catch (error) {
       console.error('Error in fetchUser:', error);
@@ -57,48 +58,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   };
-  
-  
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        fetchUser(session.user.id);
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
-    });
+    let isMounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        fetchUser(session.user.id);
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
-    });
+    const fetchSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (isMounted) {
+        if (error) {
+          console.error('Error fetching session:', error.message);
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
 
-    return () => subscription.unsubscribe();
+        const currentSession = data?.session ?? null;
+        setSession(currentSession);
+
+        if (currentSession?.user) {
+          await fetchUser(currentSession.user.id);
+        } else {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchSession();
+
+    const { subscription } = supabase.auth.onAuthStateChange((_event, updatedSession) => {
+      if (isMounted) {
+        setSession(updatedSession);
+        if (updatedSession?.user) {
+          fetchUser(updatedSession.user.id);
+        } else {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    }).data; // Aseguramos acceder directamente a `data.subscription`
+
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe(); // Llamamos a `unsubscribe` del objeto correcto
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log("Attempting to sign in with:", email, password); // Verifica los datos aquí
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-  
+
     if (error) {
       console.error("Login error:", error.message);
       throw error;
     }
-  
+
     return data;
   };
-  
 
   const signUp = async (email: string, password: string, userData: any) => {
     const { data, error } = await supabase.auth.signUp({
@@ -108,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: userData,
       },
     });
-    
+
     if (error) throw error;
     return data;
   };

@@ -6,11 +6,18 @@ import { BusinessUsers } from './BusinessUsers';
 import { BusinessSettings } from './BusinessSettings';
 import { BusinessBilling } from './BusinessBilling';
 
+interface Business {
+  id: string;
+  name: string;
+  slug: string;
+  settings?: any; // Ajusta los tipos según tus datos
+}
+
 export const BusinessProfile = () => {
   const { businessId } = useParams();
   const [activeTab, setActiveTab] = useState('users');
 
-  const { data: business, isLoading } = useSupabase(
+  const { data, isLoading } = useSupabase<Business[]>(
     'businesses',
     {
       select: '*',
@@ -19,10 +26,21 @@ export const BusinessProfile = () => {
     [businessId]
   );
 
+  // Forzamos a TypeScript a interpretar `business` como un objeto `Business | null`
+  const business = (data && data.length > 0 ? data[0] : null) as Business | null;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (!business) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Business not found</p>
       </div>
     );
   }
@@ -55,8 +73,8 @@ export const BusinessProfile = () => {
             <Building2 className="w-8 h-8 text-purple-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{business?.name}</h1>
-            <p className="text-gray-500">estelia.com/app/{business?.slug}</p>
+            <h1 className="text-2xl font-bold">{business.name}</h1>
+            <p className="text-gray-500">estelia.com/app/{business.slug}</p>
           </div>
         </div>
       </div>
