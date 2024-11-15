@@ -1,45 +1,31 @@
 import React from 'react';
-import { Edit, Trash2, AlertCircle } from 'lucide-react';
-import { useBusinessData } from '../../hooks/useBusinessData';
-
+import { Edit, Trash2, AlertCircle, Package } from 'lucide-react';
 
 interface Product {
   id: string;
   name: string;
+  description: string;
   sku: string;
-  category_id: string | null;
   price: number;
   stock: number;
-  min_stock: number;
-  status: string | null;
   image_url: string | null;
+  status: 'active' | 'inactive';
+  category: {
+    name: string;
+  } | null;
 }
 
 interface ProductsListProps {
   searchQuery: string;
+  products: Product[];
 }
 
-export const ProductsList = ({ searchQuery }: ProductsListProps) => {
-  const { data: products, loading, error } = useBusinessData<Product>('products');
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Error loading products. Please try again later.</p>
-      </div>
-    );
-  }
-
-  const filteredProducts = (products || []).filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+export const ProductsList = ({ searchQuery, products }: ProductsListProps) => {
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.category?.name.toLowerCase().includes(searchQuery.toLowerCase()) || false
   );
 
   return (
@@ -47,12 +33,18 @@ export const ProductsList = ({ searchQuery }: ProductsListProps) => {
       {filteredProducts.map((product) => (
         <div key={product.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
           <div className="aspect-square relative">
-            <img
-              src={product.image_url || 'https://via.placeholder.com/300'}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-            {product.stock <= product.min_stock && (
+            {product.image_url ? (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                <Package className="w-12 h-12 text-gray-400" />
+              </div>
+            )}
+            {product.stock <= 5 && (
               <div className="absolute top-2 right-2 bg-red-100 text-red-600 px-2 py-1 rounded-lg text-sm font-medium flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 Bajo Stock
@@ -64,7 +56,7 @@ export const ProductsList = ({ searchQuery }: ProductsListProps) => {
             <p className="text-sm text-gray-500 mb-2">SKU: {product.sku}</p>
             <div className="flex justify-between items-center">
               <span className="text-purple-600 font-semibold">
-                RD$ {product.price}
+                RD$ {product.price.toLocaleString()}
               </span>
               <div className="flex gap-2">
                 <button className="p-1 hover:bg-gray-100 rounded">

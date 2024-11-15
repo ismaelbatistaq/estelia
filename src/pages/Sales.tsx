@@ -3,30 +3,61 @@ import { Link } from 'react-router-dom';
 import { Store } from 'lucide-react';
 import { SalesOverview } from '../components/sales/SalesOverview';
 import { SalesHistory } from '../components/sales/SalesHistory';
-import { useBusinessData } from '../hooks/useBusinessData';
+import { useSupabase } from '../hooks/useSupabase';
+import { useBusiness } from '../hooks/useBusiness';
 
 interface Sale {
   id: string;
-  client_id: string;
+  client_id: string | null;
   total: number;
-  status: string;
-  payment_method: string;
+  status: 'pending' | 'completed' | 'refunded';
+  payment_method: 'cash' | 'card' | 'transfer';
   created_at: string;
   client?: {
     first_name: string;
     last_name: string;
   };
+  items: Array<{
+    id: string;
+    product_id: string | null;
+    service_id: string | null;
+    quantity: number;
+    price: number;
+    product?: {
+      name: string;
+    };
+    service?: {
+      name: string;
+    };
+  }>;
 }
 
 export const Sales = () => {
-  const { data: sales, loading, error } = useBusinessData<Sale>('sales', {
-    select: `
-      *,
-      client:clients(first_name, last_name)
-    `
-  });
+  const { business } = useBusiness();
+  const { data: sales, isLoading, error } = useSupabase<Sale>(
+    'sales',
+    {
+      select: `
+        *,
+        client:clients(first_name, last_name),
+        items:sale_items(
+          id,
+          product_id,
+          service_id,
+          quantity,
+          price,
+          product:products(name),
+          service:services(name)
+        )
+      `,
+      filters: {
+        business_id: business?.id
+      }
+    },
+    [business?.id]
+  );
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -47,7 +78,7 @@ export const Sales = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Ventas</h1>
         <Link 
-          to="/pos"
+          to="pos"
           className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
         >
           <Store className="w-5 h-5" />
@@ -55,8 +86,8 @@ export const Sales = () => {
         </Link>
       </div>
       
-      <SalesOverview sales={sales} />
-      <SalesHistory sales={sales} />
+      <SalesOverview sales={sales || []} />
+      <SalesHistory sales={sales || []} />
     </div>
   );
 };

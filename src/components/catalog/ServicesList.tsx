@@ -1,42 +1,29 @@
 import React from 'react';
-import { Clock, Edit, Trash2 } from 'lucide-react';
-import { useBusinessData } from '../../hooks/useBusinessData';
+import { Clock, Edit, Trash2, Scissors } from 'lucide-react';
+
 interface Service {
   id: string;
   name: string;
-  category_id: string | null;
-  description: string | null;
-  price: number;
+  description: string;
   duration: number;
+  price: number;
   image_url: string | null;
-  status: string | null;
+  status: 'active' | 'inactive';
+  category: {
+    name: string;
+  } | null;
 }
 
 interface ServicesListProps {
   searchQuery: string;
+  services: Service[];
 }
 
-export const ServicesList = ({ searchQuery }: ServicesListProps) => {
-  const { data: services, loading, error } = useBusinessData<Service>('services');
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Error loading services. Please try again later.</p>
-      </div>
-    );
-  }
-
-  const filteredServices = (services || []).filter((service) =>
-    service.name.toLowerCase().includes(searchQuery.toLowerCase())
+export const ServicesList = ({ searchQuery, services }: ServicesListProps) => {
+  const filteredServices = services.filter((service) =>
+    service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    service.category?.name.toLowerCase().includes(searchQuery.toLowerCase()) || false
   );
 
   return (
@@ -44,22 +31,29 @@ export const ServicesList = ({ searchQuery }: ServicesListProps) => {
       {filteredServices.map((service) => (
         <div key={service.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
           <div className="aspect-video relative">
-            <img
-              src={service.image_url || 'https://via.placeholder.com/300'}
-              alt={service.name}
-              className="w-full h-full object-cover"
-            />
+            {service.image_url ? (
+              <img
+                src={service.image_url}
+                alt={service.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                <Scissors className="w-12 h-12 text-gray-400" />
+              </div>
+            )}
           </div>
           <div className="p-4">
             <h3 className="font-medium mb-1">{service.name}</h3>
-            <p className="text-sm text-gray-500 mb-2">{service.description}</p>
+            <p className="text-sm text-gray-500 mb-2">{service.category?.name || 'Sin categoría'}</p>
+            <p className="text-sm text-gray-600 mb-3">{service.description}</p>
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
               <Clock className="w-4 h-4" />
               <span>{service.duration} minutos</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-purple-600 font-semibold">
-                RD$ {service.price}
+                RD$ {service.price.toLocaleString()}
               </span>
               <div className="flex gap-2">
                 <button className="p-1 hover:bg-gray-100 rounded">

@@ -1,17 +1,38 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { format, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 
-const data = [
-  { name: 'Lun', ventas: 4000 },
-  { name: 'Mar', ventas: 3000 },
-  { name: 'Mie', ventas: 2000 },
-  { name: 'Jue', ventas: 2780 },
-  { name: 'Vie', ventas: 1890 },
-  { name: 'Sab', ventas: 2390 },
-  { name: 'Dom', ventas: 3490 },
-];
+interface Sale {
+  created_at: string;
+  total: number;
+}
 
-export const SalesOverview = () => {
+interface SalesOverviewProps {
+  sales: Sale[];
+}
+
+export const SalesOverview = ({ sales }: SalesOverviewProps) => {
+  // Get sales for the last 7 days
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const start = startOfDay(date);
+    const end = endOfDay(date);
+    
+    const dayTotal = sales.reduce((sum, sale) => {
+      const saleDate = new Date(sale.created_at);
+      if (isWithinInterval(saleDate, { start, end })) {
+        return sum + sale.total;
+      }
+      return sum;
+    }, 0);
+
+    return {
+      date: format(date, 'EEE'),
+      total: dayTotal
+    };
+  }).reverse();
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex justify-between items-center mb-6">
@@ -24,12 +45,14 @@ export const SalesOverview = () => {
       </div>
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
+          <BarChart data={last7Days}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
+            <XAxis dataKey="date" />
             <YAxis />
-            <Tooltip />
-            <Bar dataKey="ventas" fill="#7C3AED" radius={[4, 4, 0, 0]} />
+            <Tooltip 
+              formatter={(value: number) => [`RD$ ${value.toLocaleString()}`, 'Ventas']}
+            />
+            <Bar dataKey="total" fill="#7C3AED" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

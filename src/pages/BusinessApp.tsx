@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { Dashboard } from '../components/Dashboard';
+import { Dashboard } from './Dashboard';
 import { Calendar } from './Calendar';
 import { Sales } from './Sales';
 import { POS } from './POS';
@@ -10,6 +10,7 @@ import { Marketplace } from './Marketplace';
 import { ClientFlow } from './ClientFlow';
 import { Customers } from './Customers';
 import { Settings } from './Settings';
+import { Admin } from './Admin';
 
 export const BusinessApp = () => {
   return (
@@ -23,6 +24,7 @@ export const BusinessApp = () => {
         <Route path="marketplace/*" element={<Marketplace />} />
         <Route path="clientflow" element={<ClientFlow />} />
         <Route path="customers" element={<Customers />} />
+        <Route path="admin/*" element={<Admin />} />
         <Route path="settings/*" element={<Settings />} />
         
         {/* Redirect root to dashboard */}

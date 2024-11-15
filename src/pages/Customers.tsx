@@ -4,34 +4,66 @@ import { CustomerList } from '../components/customers/CustomerList';
 import { CustomerFilters } from '../components/customers/CustomerFilters';
 import { CustomerProfile } from '../components/customers/CustomerProfile';
 import { AddCustomerModal } from '../components/customers/AddCustomerModal';
-import { useBusinessData } from '../hooks/useBusinessData';
+import { useSupabase } from '../hooks/useSupabase';
+import { useBusiness } from '../hooks/useBusiness';
 
 interface Customer {
   id: string;
-  name: string;
-  email: string;
-  phone: string;
-  lastVisit: string;
-  totalVisits: number;
-  totalSpent: number;
-  status: string;
-  image_url: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  preferences: any;
+  status: 'active' | 'inactive';
+  created_at: string;
+  appointments: Array<{
+    created_at: string;
+  }>;
+  sales: Array<{
+    total: number;
+  }>;
 }
 
 export const Customers = () => {
+  const { business } = useBusiness();
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
-  );
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const { data, loading, error } = useBusinessData<Customer[]>('clients');
+  const { data: customers, isLoading, error } = useSupabase<Customer>(
+    'clients',
+    {
+      select: `
+        *,
+        appointments (
+          created_at
+        ),
+        sales (
+          total
+        )
+      `,
+      filters: {
+        business_id: business?.id
+      }
+    },
+    [business?.id]
+  );
 
-  // Transform data to ensure it is a flat array
-  const customers: Customer[] = Array.isArray(data) ? data.flat() : [];
+  // Process the data to calculate metrics
+  const processedCustomers = customers?.map(customer => ({
+    ...customer,
+    last_visit: customer.appointments?.length > 0 
+      ? customer.appointments.reduce((latest, apt) => 
+          latest > apt.created_at ? latest : apt.created_at, 
+          customer.appointments[0].created_at
+        )
+      : null,
+    total_visits: customer.appointments?.length || 0,
+    total_spent: customer.sales?.reduce((sum, sale) => sum + (sale.total || 0), 0) || 0
+  }));
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -93,7 +125,7 @@ export const Customers = () => {
 
           {/* Customer List */}
           <CustomerList
-            customers={customers} // Pasamos el array correctamente transformado
+            customers={processedCustomers || []}
             searchQuery={searchQuery}
             onSelectCustomer={setSelectedCustomer}
           />

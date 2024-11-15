@@ -9,7 +9,8 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { CalendarToolbar } from '../components/calendar/CalendarToolbar';
 import { AppointmentModal } from '../components/calendar/AppointmentModal';
 import { CalendarSidebar } from '../components/calendar/CalendarSidebar';
-import { useBusinessData } from '../hooks/useBusinessData';
+import { useSupabase } from '../hooks/useSupabase';
+import { useBusiness } from '../hooks/useBusiness';
 
 const locales = {
   'es': es,
@@ -48,22 +49,31 @@ interface Appointment {
 }
 
 export const Calendar = () => {
+  const { business } = useBusiness();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
-  const { data: appointments, loading, error } = useBusinessData<Appointment>('appointments', {
+  const { data: appointments, isLoading, error } = useSupabase<Appointment>(
+  'appointments',
+  {
     select: `
       *,
-      client:clients(id, first_name, last_name),
-      stylist:profiles(id, first_name, last_name),
+      client_id,
+      stylist_id,
       appointment_services(
         service:services(id, name, duration)
       )
-    `
-  });
+    `,
+    filters: {
+      business_id: business?.id
+    }
+  },
+  [business?.id]
+);
 
-  if (loading) {
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>

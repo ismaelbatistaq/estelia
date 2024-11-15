@@ -1,6 +1,6 @@
 import React, { ReactNode, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Menu, Calendar, ShoppingCart, Package, Settings, LayoutDashboard, Store, Users } from 'lucide-react';
+import { Menu, Calendar, ShoppingCart, Package, Settings, LayoutDashboard, Store, Users, Building2 } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { TopBar } from './TopBar';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,6 +17,7 @@ const menuItems = [
   { icon: Package, label: 'Catalog', path: 'catalog' },
   { icon: Store, label: 'Marketplace', path: 'marketplace' },
   { icon: Users, label: 'Customers', path: 'customers' },
+  { icon: Building2, label: 'Admin', path: 'admin' },
   { icon: Settings, label: 'Settings', path: 'settings' },
 ];
 
@@ -27,13 +28,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
 
   const isActiveRoute = (path: string) => {
-    if (!organization?.slug) return false; // Evitar errores si `slug` no está definido
+    if (!organization?.slug) return false;
     const currentPath = location.pathname.replace(`/app/${organization.slug}/`, '');
     return currentPath === path || currentPath.startsWith(`${path}/`);
   };
 
   if (!organization && user.role !== 'SUPERADMIN') {
-    // Mostrar un mensaje de error si `organization` no está disponible y el usuario no es admin
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-gray-500">Organization data is not available. Please try again later.</p>

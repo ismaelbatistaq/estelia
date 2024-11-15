@@ -6,24 +6,36 @@ import { ServicesList } from '../components/catalog/ServicesList';
 import { InventoryList } from '../components/catalog/InventoryList';
 import { SuppliersList } from '../components/catalog/SuppliersList';
 import { AddItemModal } from '../components/catalog/AddItemModal';
-import { useBusinessData } from '../hooks/useBusinessData';
+import { useSupabase } from '../hooks/useSupabase';
+import { useBusiness } from '../hooks/useBusiness';
 
 interface Product {
   id: string;
   name: string;
+  description: string;
+  sku: string;
   price: number;
   stock: number;
-  category: string;
-  image_url: string;
+  category_id: string;
+  image_url: string | null;
+  status: 'active' | 'inactive';
+  category: {
+    name: string;
+  };
 }
 
 interface Service {
   id: string;
   name: string;
-  price: number;
+  description: string;
   duration: number;
-  category: string;
-  image_url: string;
+  price: number;
+  category_id: string;
+  image_url: string | null;
+  status: 'active' | 'inactive';
+  category: {
+    name: string;
+  };
 }
 
 export function Catalog() {
@@ -31,11 +43,37 @@ export function Catalog() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const { business } = useBusiness();
 
-  const { data: products, loading: productsLoading, error: productsError } = 
-    useBusinessData<Product>('products');
-  const { data: services, loading: servicesLoading, error: servicesError } = 
-    useBusinessData<Service>('services');
+  const { data: products, isLoading: productsLoading, error: productsError } = 
+    useSupabase<Product>(
+      'products',
+      {
+        select: `
+          *,
+          category:product_categories(name)
+        `,
+        filters: {
+          business_id: business?.id
+        }
+      },
+      [business?.id]
+    );
+
+  const { data: services, isLoading: servicesLoading, error: servicesError } = 
+    useSupabase<Service>(
+      'services',
+      {
+        select: `
+          *,
+          category:service_categories(name)
+        `,
+        filters: {
+          business_id: business?.id
+        }
+      },
+      [business?.id]
+    );
 
   const loading = productsLoading || servicesLoading;
   const error = productsError || servicesError;
@@ -59,11 +97,11 @@ export function Catalog() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'products':
-        return <ProductsList searchQuery={searchQuery} products={products} />;
+        return <ProductsList searchQuery={searchQuery} products={products || []} />;
       case 'services':
-        return <ServicesList searchQuery={searchQuery} services={services} />;
+        return <ServicesList searchQuery={searchQuery} services={services || []} />;
       case 'inventory':
-        return <InventoryList searchQuery={searchQuery} products={products} />;
+        return <InventoryList searchQuery={searchQuery} products={products || []} />;
       case 'suppliers':
         return <SuppliersList searchQuery={searchQuery} />;
       default:
