@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Menu, Calendar, ShoppingCart, Package, Settings, LayoutDashboard, Store, Users } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { TopBar } from './TopBar';
 import { useAuth } from '../contexts/AuthContext';
 import { useOrganization } from '../hooks/useOrganization';
+
+interface LayoutProps {
+  children?: ReactNode;
+}
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: 'dashboard' },
@@ -16,7 +20,7 @@ const menuItems = [
   { icon: Settings, label: 'Settings', path: 'settings' },
 ];
 
-export const Layout = () => {
+export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { user } = useAuth();
   const { organization } = useOrganization();
@@ -70,7 +74,7 @@ export const Layout = () => {
         {/* Main Content */}
         <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-20' : 'ml-0'} p-6`}>
           <div className="max-w-7xl mx-auto">
-            <Outlet context={{ organization }} />
+            {children || <Outlet context={{ organization }} />}
           </div>
         </main>
       </div>

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 export function useOrganization() {
-  const { orgSlug } = useParams();
+  const { businessSlug: orgSlug } = useParams(); // Cambié a businessSlug para ser consistente
   const navigate = useNavigate();
   const [organization, setOrganization] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -11,38 +11,31 @@ export function useOrganization() {
 
   useEffect(() => {
     async function fetchOrganization() {
-      try {
-        if (!orgSlug) {
-          navigate('/platform');
-          return;
-        }
+      if (!orgSlug) {
+        setLoading(false);
+        return; // Evita realizar la consulta si no hay `orgSlug`
+      }
 
+      try {
         const { data, error } = await supabase
           .from('businesses')
           .select('*')
           .eq('slug', orgSlug)
           .single();
 
-        if (error) {
-          if (error.code === 'PGRST116') {
-            navigate('/platform');
-          }
-          throw error;
-        }
+        if (error) throw error;
 
         setOrganization(data);
       } catch (err) {
+        console.error('Error fetching organization:', err);
         setError(err as Error);
-        if ((err as any).code === 'PGRST116') {
-          navigate('/platform');
-        }
       } finally {
         setLoading(false);
       }
     }
 
     fetchOrganization();
-  }, [orgSlug, navigate]);
+  }, [orgSlug]);
 
   return { organization, loading, error };
 }

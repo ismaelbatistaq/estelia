@@ -26,8 +26,13 @@ export const OrganizationsList = () => {
     );
   }
 
-  const handleAccessApp = (slug: string) => {
-    navigate(`/app/${slug}/dashboard`); // Navega directamente al negocio
+  const handleAccessApp = (slug: string | undefined) => {
+    if (slug) {
+      console.log(`Redirecting to /app/${slug}`);
+      navigate(`/app/${slug}/dashboard`); // Navega directamente al negocio
+    } else {
+      console.error('Organization slug is missing');
+    }
   };
 
   const handleAddUser = (business: any) => {

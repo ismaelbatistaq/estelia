@@ -25,6 +25,13 @@ const App: React.FC = () => {
 
           {/* Business Routes */}
           <Route path="/app/:businessSlug/login" element={<BusinessLogin />} />
+          <Route path="/app/:businessSlug" element={
+            user?.organization?.slug ? (
+              <Navigate to={`/app/${user.organization.slug}/dashboard`} replace />
+            ) : (
+              <div>Loading...</div> // O un componente de carga temporal
+            )
+          } />
           <Route path="/app/:businessSlug/*" element={
             <PrivateRoute requireBusinessAccess>
               <BusinessApp />
@@ -33,12 +40,22 @@ const App: React.FC = () => {
 
           {/* Legacy Routes Redirect */}
           <Route path="/org/:businessSlug/*" element={
-            <Navigate to={`/app/${user?.organization?.slug}`} replace />
+            user?.organization?.slug ? (
+              <Navigate to={`/app/${user.organization.slug}`} replace />
+            ) : (
+              <div>Loading...</div>
+            )
           } />
 
           {/* Root Redirect */}
           <Route path="/" element={
-            <Navigate to={user?.role === 'SUPERADMIN' ? '/platform/dashboard' : `/app/${user?.organization?.slug}`} replace />
+            user?.role === 'SUPERADMIN' ? (
+              <Navigate to="/platform/dashboard" replace />
+            ) : user?.organization?.slug ? (
+              <Navigate to={`/app/${user.organization.slug}`} replace />
+            ) : (
+              <div>Loading...</div>
+            )
           } />
 
           {/* Catch-all redirect */}
